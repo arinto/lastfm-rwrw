@@ -48,11 +48,11 @@ while (x < num_users):
     command = command_limit_one.format(user, 1, api_key)
     data = urllib2.urlopen(command).read() # data is in XML format
     
-	#learn the degree
+    #learn the degree
     degree = int(re.search('total="(\d+)"', data).group(1)) 
     id = random.randint(0, degree-1)
 	
-	#get the data for random user
+    #get the data for random user
     command = command_limit_one.format(user, id, api_key)
     data = urllib2.urlopen(command).read()
 
