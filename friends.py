@@ -6,13 +6,35 @@ import random
 import signal
 import sys
 import datetime
+import time
 from sys import stdout
 from datetime import datetime
 
-def sigquitHandler(signum, frame):
-    total_strings = "\n" + str(datetime.now()) + " END"
+def robustRead(command_to_send):
+    data = ''
+    while True:
+        success_read = True
+        try:
+            data = urllib2.urlopen(command_to_send).read() # data is in XML format
+        except:
+            success_read = False
+        
+        if success_read == True and data != None and data != '':
+            break
+        else:
+            init_strings = "\n\n" + str(datetime.now()) + " RETRY"
+            printStats(init_strings)
+            time.sleep(3)
+    
+    return data
+
+def printStats(total_strings):
     total_strings += "\ntotal samples = " + str(counter_total)
     total_strings += "\ntotal age samples = " + str(counter_age)
+   
+    if counter_total == 0 or counter_age == 0:
+        return
+
     total_strings += "\nage avg = " + str(float(total_age) / counter_age)
     total_strings += "\nage rwrw avg = " + str(total_rwrw_num_age \
     / total_rwrw_denum_age)
@@ -45,6 +67,14 @@ def sigquitHandler(signum, frame):
             total_file.close()
     except IOError:
         pass
+
+def printTempStats():
+    init_strings = "\n\n" + str(datetime.now()) + " TEMP"
+    printStats(init_strings)
+
+def sigquitHandler(signum, frame):
+    init_strings = "\n\n" + str(datetime.now()) + " END"
+    printStats(init_strings)
     stdout.write("\n")
     sys.exit(0)
 	
@@ -74,7 +104,7 @@ try:
     user_select_log_file = open("select.log", "a")
     total_file = open("total.log", "a")
     try:
-        start_str = "\n" + str(datetime.now()) + " START"
+        start_str = "\n\n" + str(datetime.now()) + " START"
         log_file.write(start_str)
         user_select_log_file.write(start_str)
         total_file.write(start_str)
@@ -111,12 +141,8 @@ while (counter_total < 100000):
     #DEGREE COMMAND
     data = '' #flush
     command = command_limit_one.format(new_user, 1, api_key)
-    try:
-        data = urllib2.urlopen(command).read() # data is in XML format
-    except:
-        data = '';
-        data = urllib2.urlopen(command).read() # data is in XML format 
-
+    data = robustRead(command)
+    
     #add degree__________________________________________________
     new_degree = int(re.search('total="(\d+)"', data).group(1))
     if new_degree > 0: #only process new_user when new_ degree > 0
@@ -126,11 +152,7 @@ while (counter_total < 100000):
         #INFO COMMAND________________________________________________
         data = '' #flush
         command = command_user_info.format(user, api_key)
-        try:
-            data = urllib2.urlopen(command).read() # data is in XML format
-        except:
-            data = '';
-            data = urllib2.urlopen(command).read() # data is in XML format
+        data = robustRead(command)
 
         ages = re.findall("<age>(.*)</age>",data)		
         playcounts = re.findall("<playcount>(.*)</playcount>", data)
@@ -182,11 +204,8 @@ while (counter_total < 100000):
     #note that 'user' is only updated when selected friend has degree > 0
     data = ''
     command = command_limit_one.format(user, friend_id, api_key)
-    try:
-        data = urllib2.urlopen(command).read() # data is in XML format
-    except:
-        data = '';
-        data = urllib2.urlopen(command).read() # data is in XML format
+    data = robustRead(command)
+    
     friends = re.findall("<name>(.*)</name>", data)	
 
     print_user_choose = "\n{0:24} --> {1:24}".format(user, friends[0])
@@ -204,6 +223,7 @@ while (counter_total < 100000):
         try:
             log_file = open("counter.log", "a")
             user_select_log_file = open("select.log", "a")
+            printTempStats()
             try:
                  log_file.write(print_string)
                  user_select_log_file.write(print_user_choose_string)
