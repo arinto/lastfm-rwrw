@@ -11,24 +11,28 @@ from datetime import datetime
 
 def sigquitHandler(signum, frame):
     total_strings = "\n" + str(datetime.now()) + " END"
-    total_strings += "\nage avg = " + str(total_age / counter_age)
+    total_strings += "\ntotal samples = " + str(counter_total)
+    total_strings += "\ntotal age samples = " + str(counter_age)
+    total_strings += "\nage avg = " + str(float(total_age) / counter_age)
     total_strings += "\nage rwrw avg = " + str(total_rwrw_num_age \
     / total_rwrw_denum_age)
 
-    total_strings += "\nplaylist avg = " + str(total_playlists / counter_total)
+    total_strings += "\nplaylist avg = " + str(float(total_playlists)\
+    / counter_total)
     total_strings += "\nplaylist rwrw avg = " + str(total_rwrw_num_playlists\
     / total_rwrw_denum)
 
-    total_strings += "\nplaycount avg = " + str(total_playcounts\
+    total_strings += "\nplaycount avg = " + str(float(total_playcounts)\
     / counter_total)
     total_strings += "\nplaycount rwrw avg = " + str(total_rwrw_num_playcounts\
     / total_rwrw_denum)
 
-    total_strings += "\nid avg = " + str(total_id / counter_total)
+    total_strings += "\nid avg = " + str(float(total_id) / counter_total)
     total_strings += "\nid rwrw avg = " + str(total_rwrw_num_id\
     / total_rwrw_denum)
 
-    total_strings += "\ndegree avg = " + str(total_friends / counter_total)
+    total_strings += "\ndegree avg = " + str(float(total_friends) \
+    / counter_total)
     total_strings += "\ndegree rwrw avg = " + str(total_rwrw_num_friends \
     / total_rwrw_denum)
 
@@ -61,7 +65,8 @@ command_user_shouts = \
     "&user={0}&limit={1}&api_key={2}"
 
 api_key = 'cda9140cf81af12206d411e1d420af18' #team_amz's API Key
-user = "rj"
+new_user = user = "rj"
+degree = 0
 
 #init some files
 try:
@@ -101,36 +106,48 @@ total_rwrw_denum = 0.0
 print_string = ''
 print_user_choose_string = ''
 
-while (1):
-    #INFO COMMAND________________________________________________
+#while (1):
+while (counter_total < 100000):
+    #DEGREE COMMAND
     data = '' #flush
-    command = command_user_info.format(user, api_key)
-    data = urllib2.urlopen(command).read() # data is in XML format
-
-    ages = re.findall("<age>(.*)</age>",data)		
-    playcounts = re.findall("<playcount>(.*)</playcount>", data)
-    playlists = re.findall("<playlists>(.*)</playlists>", data)
-    friend_ids = re.findall("<id>(.*)</id>", data)
-
-    #update totals_______________________________________________
-    total_playcounts += int(playcounts[0])
-    total_playlists += int(playlists[0])
-    total_id += int(friend_ids[0])
-
-    #update counters_____________________________________________
-    counter_total += 1
-    if ages[0] is not '':
-        counter_age += 1
-        total_age += int(ages[0])
-
-    #DEGREE COMMAND______________________________________________
-    data = '' #flush
-    command = command_limit_one.format(user, 1, api_key)
-    data = urllib2.urlopen(command).read() # data is in XML format
+    command = command_limit_one.format(new_user, 1, api_key)
+    try:
+        data = urllib2.urlopen(command).read() # data is in XML format
+    except:
+        data = '';
+        data = urllib2.urlopen(command).read() # data is in XML format 
 
     #add degree__________________________________________________
-    degree = int(re.search('total="(\d+)"', data).group(1))
-    if degree > 0:
+    new_degree = int(re.search('total="(\d+)"', data).group(1))
+    if new_degree > 0: #only process new_user when new_ degree > 0
+        degree = new_degree
+        user = new_user
+
+        #INFO COMMAND________________________________________________
+        data = '' #flush
+        command = command_user_info.format(user, api_key)
+        try:
+            data = urllib2.urlopen(command).read() # data is in XML format
+        except:
+            data = '';
+            data = urllib2.urlopen(command).read() # data is in XML format
+
+        ages = re.findall("<age>(.*)</age>",data)		
+        playcounts = re.findall("<playcount>(.*)</playcount>", data)
+        playlists = re.findall("<playlists>(.*)</playlists>", data)
+        friend_ids = re.findall("<id>(.*)</id>", data)
+
+        #update totals_______________________________________________
+        total_playcounts += int(playcounts[0])
+        total_playlists += int(playlists[0])
+        total_id += int(friend_ids[0])
+
+        #update counters_____________________________________________
+        counter_total += 1
+        if ages[0] is not '':
+            counter_age += 1
+            total_age += int(ages[0])
+
         total_friends += degree
 
         #update rwrw_________________________________________________
@@ -144,19 +161,7 @@ while (1):
         if ages[0] is not '':
             total_rwrw_num_age += float(ages[0])/degree
             total_rwrw_denum_age += 1.0/degree
-
-        #friend id
-        friend_id = random.randint(1, degree)
-
-        #FRIENDS COMMAND_____________________________________________
-        #get random user for next iteration
-        data = ''
-        command = command_limit_one.format(user, friend_id, api_key)
-        data = urllib2.urlopen(command).read()
-
-        #useful data : number of friends, age, playcount, playlists, id
-        friends = re.findall("<name>(.*)</name>", data)	
-
+        
         #log activity_____________________________________________
         print_one = "[counter_total, counter_age] = ["+str(counter_total)+","\
         +str(counter_age)+"] : [playcount,playlist,friend_id,degree,age] = ["\
@@ -164,32 +169,50 @@ while (1):
         +str(total_id)+","+str(total_friends)+","+str(total_age)+"]\n"
         #print print_one
         print_string += print_one
-
-        print_user_choose = "\n{0:24} --> {1:24}".format(user, friends[0])
-        print_user_choose_string += print_user_choose
-
-        #write log according to IO interrupt quantity
-        #(how many terminal or disk writes interrupts)
-        if counter_total % 5 == 0:
-            stdout.write("\n%d samples" % counter_total)
-            #stdout.write("\r%d samples" % counter_total)
-            stdout.flush()
-        if counter_total%100 == 0:
-            try:
-                log_file = open("counter.log", "a")
-                user_select_log_file = open("select.log", "a")
-                try:
-                     log_file.write(print_string)
-                     user_select_log_file.write(print_user_choose_string)
-                finally:
-                     log_file.close()
-                     user_select_log_file.close()
-            except IOError:
-                pass
-            print_string = ''
-            print_user_choose_string = ''
-
-        user = friends[0]
     else:
-        print user, "with degree equals to 0!!"
-        #TODO: do appropriate things with degree is 0
+        print_degree_zero =  '\n' + new_user + ' has degree 0!, '\
+         + user + ' will choose another random friend'
+        print_user_choose_string += print_degree_zero
+
+    #friend id
+    friend_id = random.randint(1, degree)
+
+    #FRIENDS COMMAND_____________________________________________
+    #get random friend from 'user' for next iteration
+    #note that 'user' is only updated when selected friend has degree > 0
+    data = ''
+    command = command_limit_one.format(user, friend_id, api_key)
+    try:
+        data = urllib2.urlopen(command).read() # data is in XML format
+    except:
+        data = '';
+        data = urllib2.urlopen(command).read() # data is in XML format
+    friends = re.findall("<name>(.*)</name>", data)	
+
+    print_user_choose = "\n{0:24} --> {1:24}".format(user, friends[0])
+    print_user_choose_string += print_user_choose
+    
+    new_user = friends[0]
+
+    #write log according to IO interrupt quantity
+    #(how many terminal or disk writes interrupts)
+    if counter_total % 5 == 0:
+        #stdout.write("%d samples\n" % counter_total)
+        stdout.write("\r%d samples" % counter_total)
+        stdout.flush()
+    if counter_total%100 == 0:
+        try:
+            log_file = open("counter.log", "a")
+            user_select_log_file = open("select.log", "a")
+            try:
+                 log_file.write(print_string)
+                 user_select_log_file.write(print_user_choose_string)
+            finally:
+                 log_file.close()
+                 user_select_log_file.close()
+        except IOError:
+            pass
+        print_string = ''
+        print_user_choose_string = ''
+
+sigquitHandler(1,1);
