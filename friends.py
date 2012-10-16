@@ -20,7 +20,7 @@ def robustRead(command_to_send):
             command_to_send = command_to_send.replace(' ', '+')
             success_read = False
         
-        if success_read == True and data != None and data != '':
+        if success_read == True and data is not None and data != '':
             break
         else:
             init_strings = "\n\n" + str(datetime.now()) + " RETRY"
@@ -98,7 +98,6 @@ command_user_shouts = \
 
 api_key = 'cda9140cf81af12206d411e1d420af18' #team_amz's API Key
 new_user = user = "rj"
-#end monkey
 degree = 0
 
 #init some files
@@ -160,6 +159,19 @@ while (True):
         playcounts = re.findall("<playcount>(.*)</playcount>", data)
         playlists = re.findall("<playlists>(.*)</playlists>", data)
         friend_ids = re.findall("<id>(.*)</id>", data)
+	
+        #handle case when playcount, playlist and id list have no data
+        if (playcounts is None) or (playcounts[0] is None) \
+        or (playcounts[0] is ''):
+            playcounts = [0]
+
+	if (playlists is None) or (playlists[0] is None) \
+        or (playlists[0] is ''):
+            playlists = [0]
+	
+        if (friend_ids is None) or (friend_ids[0] is None) \
+        or (friend_ids[0] is ''):
+            friend_ids= [0]
 
         #update totals_______________________________________________
         total_playcounts += int(playcounts[0])
