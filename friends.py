@@ -136,8 +136,7 @@ total_rwrw_denum = 0.0
 print_string = ''
 print_user_choose_string = ''
 
-#while (1):
-while (counter_total < 100000):
+while (True):
     #DEGREE COMMAND
     data = '' #flush
     command = command_limit_one.format(new_user, 1, api_key)
