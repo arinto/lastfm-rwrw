@@ -17,12 +17,14 @@ def robustRead(command_to_send):
         try:
             data = urllib2.urlopen(command_to_send).read() # data is in XML format
         except:
+            command_to_send = command_to_send.replace(' ', '+')
             success_read = False
         
         if success_read == True and data != None and data != '':
             break
         else:
             init_strings = "\n\n" + str(datetime.now()) + " RETRY"
+            init_strings += "\ncommand to send " + command_to_send
             printStats(init_strings)
             time.sleep(3)
     
@@ -96,6 +98,7 @@ command_user_shouts = \
 
 api_key = 'cda9140cf81af12206d411e1d420af18' #team_amz's API Key
 new_user = user = "rj"
+#end monkey
 degree = 0
 
 #init some files
@@ -195,18 +198,24 @@ while (True):
          + user + ' will choose another random friend'
         print_user_choose_string += print_degree_zero
 
-    #friend id
-    friend_id = random.randint(1, degree)
+    friends = None
+    while True:
+        #friend id
+        friend_id = random.randint(1, degree)
 
-    #FRIENDS COMMAND_____________________________________________
-    #get random friend from 'user' for next iteration
-    #note that 'user' is only updated when selected friend has degree > 0
-    data = ''
-    command = command_limit_one.format(user, friend_id, api_key)
-    data = robustRead(command)
+        #FRIENDS COMMAND_____________________________________________
+        #get random friend from 'user' for next iteration
+        #note that 'user' is only updated when selected friend has degree > 0
+        data = ''
+        command = command_limit_one.format(user, friend_id, api_key)
+        data = robustRead(command)
     
-    friends = re.findall("<name>(.*)</name>", data)	
-
+        friends = re.findall("<name>(.*)</name>", data)	
+        if(len(friends) >= 1):
+            break
+        else:
+            print "invalid random friends", data
+ 
     print_user_choose = "\n{0:24} --> {1:24}".format(user, friends[0])
     print_user_choose_string += print_user_choose
     
