@@ -165,7 +165,7 @@ while (True):
         or (playcounts[0] is ''):
             playcounts = [0]
 
-	if (playlists is None) or (playlists[0] is None) \
+        if (playlists is None) or (playlists[0] is None) \
         or (playlists[0] is ''):
             playlists = [0]
 	
